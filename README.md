@@ -7,7 +7,7 @@ That's when I came up with the idea for SemBot.
 SemBot Is a node Discord bot which simulates Sem being in your voice channel. The bot can come into your voice channel and play random files at random intervals.
 
 ## Get Started
-To get started working on this project, please go to the [contributing](http://) document.
+To get started working on this project, please go to the [contributing](https://github.com/Kibuns/DiscordBot/blob/master/CONTRIBUTING.md) document.
 
 ## Functionality
 
