@@ -2,16 +2,11 @@ const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
-  getVoiceConnection,
-  AudioPlayerStatus,
-  NoSubscriberBehavior,
-  AudioResource,
-  VoiceConnectionStatus,
 } = require("@discordjs/voice");
 
 const Discord = require("discord.js");
 const fs = require("fs");
-const { join } = require("path");
+const { type } = require("os");
 require("dotenv").config();
 
 const client = new Discord.Client({
@@ -25,21 +20,26 @@ const client = new Discord.Client({
 });
 const joinCommand = "/joinMeSem";
 const player = createAudioPlayer();
-var interval = 3000;
-var min = 180;
-var max = 400;
-var RandomPlaysIntervals;
+var interval;
+var min = 10; //seconds
+var max = 20; //seconds
 var connected = false;
 var connection;
 var playing = false;
 var previousFile = "Welkom.mp3";
+var timeout;
 
 client.once("ready", () => {
   console.log("ONLINE!!");
 });
 
-const startRandomPlay = (connection) => {
-  interval = 1500;
+function toggleRandomPlay(shouldBePlaying) {
+  if (!shouldBePlaying && typeof timeout !== undefined) {
+    clearTimeout(timeout);
+    playing = false;
+    console.log("Stopped playing");
+    return;
+  }
 
   const mp3Files = fs
     .readdirSync("./mp3")
@@ -52,25 +52,24 @@ const startRandomPlay = (connection) => {
   }
   playing = true;
   playRandomFilesOnRepeat(mp3Files);
-};
+}
 
 const playRandomFilesOnRepeat = (files) => {
-  // RandomPlaysIntervals = setInterval(() => {
-  //   const randomFile = files[Math.floor(Math.random() * files.length)];
-  //   console.log(randomFile);
-  //   playResource("./mp3/" + randomFile);
-  //   interval = min + Math.floor(Math.random() * max);
-  // }, interval);
-  setTimeout(() => {
+  //pick random file, non repeating
+  var randomFile = files[Math.floor(Math.random() * files.length)];
+  while (randomFile === previousFile) {
+    randomFile = files[Math.floor(Math.random() * files.length)];
+  }
+  console.log("next clip will be %s,", randomFile);
+
+  //interval
+  interval = min * 1000 + Math.floor(Math.random() * ((max - min) * 1000));
+  console.log("the clip will start in %d seconds", interval / 1000);
+
+  //will start in {interval} ms
+  timeout = setTimeout(() => {
     if (!playing) return;
-    interval = min * 1000 + Math.floor(Math.random() * ((max - min) * 1000));
-    console.log("next clip will start in %d seconds", interval / 1000);
-    var randomFile = files[Math.floor(Math.random() * files.length)];
-    while (randomFile === previousFile) {
-      randomFile = files[Math.floor(Math.random() * files.length)];
-    }
-    previousFile = randomFile;
-    console.log(randomFile);
+    previousFile = randomFile; // set previousFile so it wont repeat
     playResource("./mp3/" + randomFile);
     playRandomFilesOnRepeat(files);
   }, interval);
@@ -81,6 +80,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  //play
   if (message.content.startsWith("/play")) {
     if (!connected) {
       message.reply(
@@ -88,9 +88,10 @@ client.on("messageCreate", async (message) => {
       );
       return;
     }
-    startRandomPlay(connection);
+    toggleRandomPlay(true);
   }
 
+  //stop
   if (message.content.startsWith("/stop")) {
     if (!connected) {
       message.reply(
@@ -98,9 +99,10 @@ client.on("messageCreate", async (message) => {
       );
       return;
     }
-    console.log("stop playing");
-    playing = false;
+    toggleRandomPlay(false);
   }
+
+  //joinMeSem
   if (message.content.startsWith(joinCommand)) {
     if (!message.member.voice.channel) {
       message.reply("You need to join a voice channel first. Bimbo!");
@@ -115,14 +117,9 @@ client.on("messageCreate", async (message) => {
     message.reply("joined your channel!");
     connected = true;
     console.log("clear");
-    clearInterval(RandomPlaysIntervals);
 
     playResource("./mp3/welkom.mp3"); //welcome message
   }
-});
-
-player.on(AudioPlayerStatus.Playing, () => {
-  console.log("The audio player has started playing!");
 });
 
 client.login(process.env.CLIENT_KEY);
