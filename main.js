@@ -3,12 +3,10 @@ const {
   createAudioPlayer,
   createAudioResource,
 } = require("@discordjs/voice");
-require("dotenv").config();
 const stringSimilarity = require("string-similarity");
-
+require("dotenv").config();
 const Discord = require("discord.js");
 const fs = require("fs");
-const { type } = require("os");
 
 const client = new Discord.Client({
   intents: [
@@ -19,7 +17,7 @@ const client = new Discord.Client({
     Discord.IntentsBitField.Flags.GuildVoiceStates,
   ],
 });
-const joinCommand = "/joinMeSem";
+const joinCommand = "/join";
 const player = createAudioPlayer();
 var interval;
 var min = 10; //seconds
@@ -27,7 +25,7 @@ var max = 20; //seconds
 var connected = false;
 var connection;
 var playing = false;
-var previousFile = "Welkom.mp3";
+var previousFile;
 var timeout;
 
 client.once("ready", () => {
@@ -129,7 +127,7 @@ client.on("messageCreate", async (message) => {
     toggleRandomPlay(false);
   }
 
-  //joinMeSem
+  //join
   if (message.content.startsWith(joinCommand)) {
     if (!message.member.voice.channel) {
       message.reply("You need to join a voice channel first. Bimbo!");
@@ -145,7 +143,7 @@ client.on("messageCreate", async (message) => {
     connected = true;
     console.log("clear");
 
-    playResource("./mp3/welkom.mp3"); //welcome message
+    playResource("./mp3/welkom hoi ik ben sem.mp3"); //welcome message
   }
 });
 
