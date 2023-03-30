@@ -3,11 +3,12 @@ const {
   createAudioPlayer,
   createAudioResource,
 } = require("@discordjs/voice");
+require("dotenv").config();
+const stringSimilarity = require("string-similarity");
 
 const Discord = require("discord.js");
 const fs = require("fs");
 const { type } = require("os");
-require("dotenv").config();
 
 const client = new Discord.Client({
   intents: [
@@ -86,8 +87,34 @@ client.on("messageCreate", async (message) => {
       message.reply(
         `I'm not in the voice channel yet. Bimbo! Use '${joinCommand}' if you want me to join.`
       );
+    }
+
+    const args = message.content.split(/ +/);
+    args.shift(); //remove /play
+    const command = args.join(" ").toLowerCase();
+
+    if (command === "") {
+      message.reply(
+        "Bimbo! If you use `/play`, you need to put a search query after it. If you want me to just talk randomly, say `/random`"
+      );
       return;
     }
+    console.log(command);
+    searchAndPlay(command);
+
+    return;
+  }
+
+  if (message.content.startsWith("/random")) {
+    if (!connected) {
+      message.reply(
+        `I'm not in the voice channel yet. Bimbo! Use ${joinCommand} if you want me to join.`
+      );
+      return;
+    }
+    message.reply(
+      `Okay! I'll now say something every ${min} to '${max}' seconds.`
+    );
     toggleRandomPlay(true);
   }
 
@@ -127,3 +154,22 @@ client.login(process.env.CLIENT_KEY);
 const playResource = async (path) => {
   player.play(createAudioResource(path));
 };
+
+function searchAndPlay(query) {
+  //get all files
+  const mp3Files = fs
+    .readdirSync("./mp3")
+    .filter((file) => file.endsWith(".mp3"));
+
+  //sort the files based on query, from most like the query, to least like the query
+  const sortedFiles = mp3Files.sort((fileA, fileB) => {
+    const similarityA = stringSimilarity.compareTwoStrings(fileA, query);
+    const similarityB = stringSimilarity.compareTwoStrings(fileB, query);
+    return similarityB - similarityA;
+  });
+
+  //use PlayResource to play the most similar .mp3 file.
+  const mostSimilarFile = sortedFiles[0];
+  console.log(`Playing ${mostSimilarFile} based on query "${query}"`);
+  playResource(`./mp3/${mostSimilarFile}`);
+}
