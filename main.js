@@ -18,7 +18,9 @@ const client = new Discord.Client({
   ],
 });
 const joinCommand = "/join";
+const playCommand = "/play";
 const player = createAudioPlayer();
+const welcomeMessagePath = "./mp3/welkom hoi ik ben sem.mp3"; //path of the mp3 file that will play when the bot joins the vc
 var interval;
 var min = 10; //seconds
 var max = 20; //seconds
@@ -43,7 +45,7 @@ function toggleRandomPlay(shouldBePlaying) {
   const mp3Files = fs
     .readdirSync("./mp3")
     .filter((file) => file.endsWith(".mp3"))
-    .filter((file) => !file.includes("welkom"));
+    .filter((file) => !file.includes(welcomeMessagePath));
 
   if (mp3Files.length === 0) {
     console.log("No MP3 files found in the 'mp3_files' directory");
@@ -79,8 +81,8 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  //play
-  if (message.content.startsWith("/play")) {
+  //playCommand
+  if (message.content.startsWith(playCommand)) {
     if (!connected) {
       message.reply(
         `I'm not in the voice channel yet. Bimbo! Use '${joinCommand}' if you want me to join.`
@@ -88,12 +90,12 @@ client.on("messageCreate", async (message) => {
     }
 
     const args = message.content.split(/ +/);
-    args.shift(); //remove /play
+    args.shift(); //remove {playCommand}
     const command = args.join(" ").toLowerCase();
 
     if (command === "") {
       message.reply(
-        "Bimbo! If you use `/play`, you need to put a search query after it. If you want me to just talk randomly, say `/random`"
+        `Bimbo! If you use '${playCommand}', you need to put a search query after it. If you want me to just talk randomly, say '/random'`
       );
       return;
     }
@@ -103,6 +105,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  //random
   if (message.content.startsWith("/random")) {
     if (!connected) {
       message.reply(
@@ -143,11 +146,9 @@ client.on("messageCreate", async (message) => {
     connected = true;
     console.log("clear");
 
-    playResource("./mp3/welkom hoi ik ben sem.mp3"); //welcome message
+    playResource(welcomeMessagePath); //welcome message
   }
 });
-
-client.login(process.env.CLIENT_KEY);
 
 const playResource = async (path) => {
   player.play(createAudioResource(path));
@@ -171,3 +172,5 @@ function searchAndPlay(query) {
   console.log(`Playing ${mostSimilarFile} based on query "${query}"`);
   playResource(`./mp3/${mostSimilarFile}`);
 }
+
+client.login(process.env.CLIENT_KEY);
